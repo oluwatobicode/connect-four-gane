@@ -125,31 +125,55 @@ so it does like this
 
  */
 
+import React, { createContext, useContext, useReducer } from "react";
+
 // the game interface
 
 interface GameState {
-  grid: (null | "player1" | "player2")[][];
+  grid: (undefined | "player1" | "player2")[][];
   currentPlayer: "player1" | "player2";
-  winner: null | "player1" | "player2" | "draw";
+  winner: undefined | "player1" | "player2" | "draw";
   isGameActive: false;
-  gameMode: "pvp" | "p2p";
-}
-
-interface UIState {
+  gameMode: "pvp" | "pvc" | undefined;
   timer: number;
-  isDropping: boolean;
-  droppingColumn: number | null;
-  showMenu: boolean;
+  showMenu: false;
   scores: { player1: number; player2: number };
-}
-
-interface PlayerState {
+  isDropping: boolean;
+  droppingColumn: number | undefined;
   player1: "human";
-  player2: "player2" | "cpu";
-  currentTurn: "player1" | "player2";
+  player2: "human" | "cpu" | undefined;
+  currentTurn: "player1" | "player2" | undefined;
+  gridSize: "6x7";
 }
 
-type GameActions =
+interface GameActionProps {
+  state: GameState;
+  startGame: (options: { mode: "pvp" | "pvc" }) => void;
+  restartGame: () => void;
+  pauseGame: () => void;
+  updateTimer: () => void;
+  checkWinner: () => void;
+}
+
+const initialGameState: GameState = {
+  winner: undefined,
+  isGameActive: false,
+  timer: 30000,
+  grid: [],
+  currentPlayer: "player1",
+  gameMode: undefined,
+  showMenu: false,
+  scores: { player1: 0, player2: 0 },
+  isDropping: false,
+  droppingColumn: undefined,
+  player1: "human",
+  player2: "human",
+  currentTurn: undefined,
+  gridSize: "6x7",
+};
+
+// create the acions that will happen in our app
+type gameActions =
   | { type: "GAME_START"; payload: { mode: "pvc" | "pvp" } }
   | { type: "DROP_DISC"; payload: { columnId: number } }
   | { type: "ANIMATION_COMPLETE" }
@@ -158,3 +182,40 @@ type GameActions =
   | { type: "SHOW_MENU" }
   | { type: "SHOW_RULES" }
   | { type: "GAME_PAUSE" };
+
+// create a reducer with a switch type that contains all of our game logic
+const gameReducer = (state: GameState, action: gameActions): GameState => {
+  switch (action.type) {
+    case "GAME_START":
+      return { ...state };
+    default:
+      return state;
+  }
+};
+
+// create your context and pass in the necessary types
+const GameContext = createContext(undefined);
+
+// then create a game provider so as we can wrap ur app
+export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  // create our dispatch and state function for useReducer
+  const [state, dispatch] = useReducer(gameReducer, initialGameState);
+
+  const value: GameActionProps = {
+    state,
+  };
+
+  return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
+};
+
+export const useGameContext = () => {
+  const context = useContext(GameContext);
+  if (context === undefined)
+    throw new Error("useGameContext must be used within a GameProvider");
+
+  return context;
+};
+
+export default GameProvider;
