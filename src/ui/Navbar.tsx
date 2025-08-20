@@ -1,11 +1,11 @@
-import { useState } from "react";
 import Modal from "../ui/Modal";
+import { useGameContext } from "../contexts/GameProvider";
 
 const Navbar = () => {
-  const [showModal, setShowModal] = useState(false);
+  const { showMenu, state } = useGameContext();
 
   const onClick = () => {
-    setShowModal(!showModal);
+    showMenu();
   };
 
   return (
@@ -27,7 +27,7 @@ const Navbar = () => {
           />
         </div>
 
-        {showModal && <Modal />}
+        {state.showMenu && <Modal />}
 
         <div className="ml-auto">
           <button className="cursor-pointer w-[89px] h-[39px] bg-[#5C2DD5] rounded-[20px] text-[16px]">

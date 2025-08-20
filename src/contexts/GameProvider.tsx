@@ -148,11 +148,17 @@ interface GameState {
 
 interface GameActionProps {
   state: GameState;
-  startGame: (options: { mode: "pvp" | "pvc" }) => void;
+  startGame: (options: {
+    mode: "pvp" | "pvc";
+    playerTwo: "cpu" | "human";
+  }) => void;
   restartGame: () => void;
   pauseGame: () => void;
   updateTimer: () => void;
   checkWinner: () => void;
+  animationComplete: () => void;
+  quitGame: () => void;
+  showMenu: (option: { show: true | false }) => void;
 }
 
 const initialGameState: GameState = {
@@ -167,34 +173,44 @@ const initialGameState: GameState = {
   isDropping: false,
   droppingColumn: undefined,
   player1: "human",
-  player2: "human",
+  player2: undefined,
   currentTurn: undefined,
   gridSize: "6x7",
 };
 
 // create the acions that will happen in our app
 type gameActions =
-  | { type: "GAME_START"; payload: { mode: "pvc" | "pvp" } }
+  | {
+      type: "GAME_START";
+      payload: { mode: "pvc" | "pvp"; playerTwo: "cpu" | "human" };
+    }
   | { type: "DROP_DISC"; payload: { columnId: number } }
   | { type: "ANIMATION_COMPLETE" }
   | { type: "TIME_EXPIRED" }
-  | { type: "RESTART GAME" }
-  | { type: "SHOW_MENU" }
+  | { type: "RESTART_GAME" }
+  | { type: "SHOW_MENU"; payload: { show: true | false } }
   | { type: "SHOW_RULES" }
-  | { type: "GAME_PAUSE" };
+  | { type: "GAME_PAUSE" }
+  | { type: "QUIT_GAME" }
+  | { type: "CHECK_WINNER" };
 
 // create a reducer with a switch type that contains all of our game logic
 const gameReducer = (state: GameState, action: gameActions): GameState => {
   switch (action.type) {
     case "GAME_START":
-      return { ...state };
+      return {
+        ...state,
+        gameMode: action.payload.mode,
+        player1: "human",
+        player2: action.payload.playerTwo,
+      };
     default:
       return state;
   }
 };
 
 // create your context and pass in the necessary types
-const GameContext = createContext(undefined);
+const GameContext = createContext<GameActionProps | undefined>(undefined);
 
 // then create a game provider so as we can wrap ur app
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -205,6 +221,41 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const value: GameActionProps = {
     state,
+
+    startGame: (options) => {
+      dispatch({
+        type: "GAME_START",
+        payload: options,
+      });
+    },
+
+    restartGame: () => {
+      dispatch({ type: "RESTART_GAME" });
+    },
+
+    animationComplete: () => {
+      dispatch({ type: "ANIMATION_COMPLETE" });
+    },
+
+    pauseGame: () => {
+      dispatch({ type: "GAME_PAUSE" });
+    },
+
+    checkWinner: () => {
+      dispatch({ type: "CHECK_WINNER" });
+    },
+
+    updateTimer: () => {
+      dispatch({ type: "TIME_EXPIRED" });
+    },
+
+    quitGame: () => {
+      dispatch({ type: "QUIT_GAME" });
+    },
+
+    showMenu: (option) => {
+      dispatch({ type: "SHOW_MENU", payload: option.show });
+    },
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
