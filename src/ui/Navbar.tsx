@@ -5,7 +5,7 @@ const Navbar = () => {
   const { showMenu, state } = useGameContext();
 
   const onClick = () => {
-    showMenu();
+    showMenu({ show: true });
   };
 
   return (

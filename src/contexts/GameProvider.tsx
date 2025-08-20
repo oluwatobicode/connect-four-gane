@@ -124,26 +124,23 @@ so it does like this
 1 === 1 === 1 (a win)
 
  */
+// the game interface
 
 import React, { createContext, useContext, useReducer } from "react";
 
-// the game interface
-
 interface GameState {
-  grid: (undefined | "player1" | "player2")[][];
+  grid: (null | "player1" | "player2")[][];
   currentPlayer: "player1" | "player2";
   winner: undefined | "player1" | "player2" | "draw";
-  isGameActive: false;
+  isGameActive: true | false;
   gameMode: "pvp" | "pvc" | undefined;
   timer: number;
-  showMenu: false;
+  showMenu: true | false;
   scores: { player1: number; player2: number };
   isDropping: boolean;
   droppingColumn: number | undefined;
   player1: "human";
   player2: "human" | "cpu" | undefined;
-  currentTurn: "player1" | "player2" | undefined;
-  gridSize: "6x7";
 }
 
 interface GameActionProps {
@@ -158,14 +155,17 @@ interface GameActionProps {
   checkWinner: () => void;
   animationComplete: () => void;
   quitGame: () => void;
-  showMenu: (option: { show: true | false }) => void;
+  showMenu: (option: { show: boolean }) => void;
+  dropDisc: (columnId: number) => void;
 }
 
 const initialGameState: GameState = {
   winner: undefined,
-  isGameActive: false,
-  timer: 30000,
-  grid: [],
+  isGameActive: true,
+  timer: 15,
+  grid: Array(6)
+    .fill(null)
+    .map(() => Array(7).fill(null)),
   currentPlayer: "player1",
   gameMode: undefined,
   showMenu: false,
@@ -174,11 +174,9 @@ const initialGameState: GameState = {
   droppingColumn: undefined,
   player1: "human",
   player2: undefined,
-  currentTurn: undefined,
-  gridSize: "6x7",
 };
 
-// create the acions that will happen in our app
+// create the actions that will happen in our app
 type gameActions =
   | {
       type: "GAME_START";
@@ -188,11 +186,46 @@ type gameActions =
   | { type: "ANIMATION_COMPLETE" }
   | { type: "TIME_EXPIRED" }
   | { type: "RESTART_GAME" }
-  | { type: "SHOW_MENU"; payload: { show: true | false } }
-  | { type: "SHOW_RULES" }
+  | { type: "SHOW_MENU"; payload: { show: boolean } }
   | { type: "GAME_PAUSE" }
   | { type: "QUIT_GAME" }
+  | { type: "TIMER_TICK" }
+  | { type: "SWITCH_PLAYER" }
   | { type: "CHECK_WINNER" };
+
+// HELPER FUNCTION
+
+const checkWinCodition = (
+  grid: (null | "player1" | "player2")[][],
+  row: number,
+  col: number,
+  player: "player1" | "player2"
+): boolean => {
+  return false;
+};
+
+const checkLowestRow = (
+  grid: (null | "player1" | "player2")[][],
+  column: number
+): number => {
+  // starting from bottom row index 5 to the top
+  for (let row = 5; row >= 0; row--) {
+    if (grid[column][row] === null) {
+      // then we will return the lowest empty row
+      return row;
+    }
+  }
+
+  // if the column is full
+  return -1;
+};
+
+const checkIsColumnFull = (
+  grid: (null | "player1" | "player2")[][],
+  column: number
+): boolean => {
+  return grid[0][column] !== null;
+};
 
 // create a reducer with a switch type that contains all of our game logic
 const gameReducer = (state: GameState, action: gameActions): GameState => {
@@ -204,6 +237,23 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
         player1: "human",
         player2: action.payload.playerTwo,
       };
+
+    case "RESTART_GAME":
+      return {
+        ...state,
+      };
+
+    case "SHOW_MENU":
+      return {
+        ...state,
+        showMenu: action.payload.show,
+      };
+
+    case "QUIT_GAME":
+      return {
+        ...initialGameState,
+      };
+
     default:
       return state;
   }
@@ -254,7 +304,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     },
 
     showMenu: (option) => {
-      dispatch({ type: "SHOW_MENU", payload: option.show });
+      dispatch({ type: "SHOW_MENU", payload: option });
+    },
+
+    dropDisc: (column) => {
+      dispatch({ type: "DROP_DISC", payload: { columnId: column } });
     },
   };
 
