@@ -241,6 +241,7 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
     case "RESTART_GAME":
       return {
         ...state,
+        player1: "human",
       };
 
     case "SHOW_MENU":
