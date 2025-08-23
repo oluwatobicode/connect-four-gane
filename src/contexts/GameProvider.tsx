@@ -195,12 +195,104 @@ type gameActions =
 
 // HELPER FUNCTION
 
-const checkWinCodition = (
+/*
+// Your Connect Four grid (6 rows × 7 columns)
+grid = [
+  [null, null, null, null, null, null, null], // Row 0 (TOP)
+  [null, null, null, null, null, null, null], // Row 1
+  [null, null, null, null, null, null, null], // Row 2  
+  [null, null, null, null, null, null, null], // Row 3
+  [null, null, null, null, null, 3, null], // Row 4
+  [null, null, null, null, null, 3, null], // Row 5 (BOTTOM)
+]
+//  ↑     ↑     ↑     ↑     ↑     ↑     ↑
+//  Col0  Col1  Col2  Col3  Col4  Col5  Col6
+
+
+  */
+
+const checkWinCondition = (
   grid: (null | "player1" | "player2")[][],
   row: number,
   col: number,
   player: "player1" | "player2"
 ): boolean => {
+  // 1)check horizontal
+  let count = 1; // count the current disc
+  // count to the left
+  for (let c = col - 1; c >= 0; c--) {
+    if (grid[row][c] === player) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  // counts to the right
+  for (let c = col + 1; c < 7; c++) {
+    if (grid[row][c] === player) {
+      count++;
+    } else {
+      break;
+    }
+  }
+
+  if (count >= 4) {
+    return true;
+  }
+
+  // 2)check vertical
+  count = 1; // reset count for vertical check
+  for (let r = row + 1; r < 6; r++) {
+    if (grid[r][col] === player) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  if (count >= 4) {
+    return true;
+  }
+
+  // 3)check diagonal (bottom-left to top-right)
+  count = 1;
+  for (let r = row + 1, c = col - 1; r < 6 && c >= 0; r++, c--) {
+    if (grid[r][c] === player) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  for (let r = row - 1, c = col + 1; r >= 0 && c < 7; r--, c++) {
+    if (grid[r][c] === player) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  if (count >= 4) {
+    return true;
+  }
+
+  // 4)check diagonal (top-left to bottom-right)
+  count = 1;
+  for (let r = row - 1, c = col - 1; r >= 0 && c >= 0; r--, c--) {
+    if (grid[r][c] === player) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  for (let r = row + 1, c = col + 1; r < 6 && c < 7; r++, c++) {
+    if (grid[r][c] === player) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  if (count >= 4) {
+    return true;
+  }
+
   return false;
 };
 
@@ -210,7 +302,7 @@ const checkLowestRow = (
 ): number => {
   // starting from bottom row index 5 to the top
   for (let row = 5; row >= 0; row--) {
-    if (grid[column][row] === null) {
+    if (grid[row][column] === null) {
       // then we will return the lowest empty row
       return row;
     }
@@ -238,10 +330,73 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
         player2: action.payload.playerTwo,
       };
 
+    case "DROP_DISC":
+      const column = action.payload.columnId;
+
+      // checks if the column is full
+      if (checkIsColumnFull(state.grid, column)) {
+        // i will pass a toast notification here
+        console.log("Column is full!");
+        return state;
+      }
+      // find where the disc should actually land
+      const targetRow = checkLowestRow(state.grid, column);
+      // placing disk at the bottom, not where the user clicked
+      const newGrid = [...state.grid];
+      newGrid[targetRow][column] = state.currentPlayer;
+
+      const hasWon = checkWinCondition(
+        newGrid,
+        targetRow,
+        column,
+        state.currentPlayer
+      );
+
+      if (hasWon) {
+        const newScores = { ...state.scores };
+        if (state.currentPlayer === "player1") {
+          newScores.player1++;
+        } else {
+          newScores.player2++;
+        }
+
+        return {
+          ...state,
+          grid: newGrid,
+          winner: state.currentPlayer,
+          scores: newScores,
+          isGameActive: false,
+        };
+      }
+
+      // check for draw
+      const isBoardFull = newGrid.every((row) =>
+        row.every((cell) => cell !== null)
+      );
+
+      if (isBoardFull) {
+        return {
+          ...state,
+          grid: newGrid,
+          winner: "draw",
+          isGameActive: false,
+        };
+      }
+
+      return {
+        ...state,
+        grid: newGrid,
+        currentPlayer:
+          state.currentPlayer === "player1" ? "player2" : "player1",
+        timer: 15,
+      };
+
     case "RESTART_GAME":
       return {
         ...state,
-        player1: "human",
+        gameMode: state.gameMode,
+        player2: state.player2,
+        scores: state.scores,
       };
 
     case "SHOW_MENU":
