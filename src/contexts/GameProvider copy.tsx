@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useReducer } from "react";
-import toast from "react-hot-toast";
 
 interface GameState {
   grid: (null | "player1" | "player2")[][];
@@ -24,7 +23,7 @@ interface GameActionProps {
   }) => void;
   restartGame: () => void;
   pauseGame: () => void;
-  timerTick: () => void;
+  updateTimer: () => void;
   checkWinner: () => void;
   animationComplete: () => void;
   quitGame: () => void;
@@ -37,7 +36,7 @@ interface GameActionProps {
 const initialGameState: GameState = {
   winner: undefined,
   isGameActive: true,
-  timer: 30,
+  timer: 15,
   grid: Array(6)
     .fill(null)
     .map(() => Array(7).fill(null)),
@@ -59,6 +58,7 @@ type gameActions =
     }
   | { type: "DROP_DISC"; payload: { columnId: number } }
   | { type: "ANIMATION_COMPLETE" }
+  | { type: "TIME_EXPIRED" }
   | { type: "RESTART_GAME" }
   | { type: "PLAY_AGAIN" }
   | { type: "CONTINUE_GAME" }
@@ -66,9 +66,26 @@ type gameActions =
   | { type: "GAME_PAUSE" }
   | { type: "QUIT_GAME" }
   | { type: "TIMER_TICK" }
+  | { type: "SWITCH_PLAYER" }
   | { type: "CHECK_WINNER" };
 
 // HELPER FUNCTION
+
+/*
+// Your Connect Four grid (6 rows × 7 columns)
+grid = [
+  [null, null, null, null, null, null, null], // Row 0 (TOP)
+  [null, null, null, null, null, null, null], // Row 1
+  [null, null, null, null, null, null, null], // Row 2  
+  [null, null, null, null, null, null, null], // Row 3
+  [null, null, null, null, null, 3, null], // Row 4
+  [null, null, null, null, null, 3, null], // Row 5 (BOTTOM)
+]
+//  ↑     ↑     ↑     ↑     ↑     ↑     ↑
+//  Col0  Col1  Col2  Col3  Col4  Col5  Col6
+
+
+  */
 
 const checkWinCondition = (
   grid: (null | "player1" | "player2")[][],
@@ -159,12 +176,15 @@ const checkLowestRow = (
   grid: (null | "player1" | "player2")[][],
   column: number
 ): number => {
+  // starting from bottom row index 5 to the top
   for (let row = 5; row >= 0; row--) {
     if (grid[row][column] === null) {
+      // then we will return the lowest empty row
       return row;
     }
   }
 
+  // if the column is full
   return -1;
 };
 
@@ -175,6 +195,7 @@ const checkIsColumnFull = (
   return grid[0][column] !== null;
 };
 
+// create a reducer with a switch type that contains all of our game logic
 const gameReducer = (state: GameState, action: gameActions): GameState => {
   switch (action.type) {
     case "GAME_START":
@@ -188,14 +209,15 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
     case "DROP_DISC":
       const column = action.payload.columnId;
 
+      // checks if the column is full
       if (checkIsColumnFull(state.grid, column)) {
         // i will pass a toast notification here
-        toast.error("Column is full!");
+        console.log("Column is full!");
         return state;
       }
-
+      // find where the disc should actually land
       const targetRow = checkLowestRow(state.grid, column);
-
+      // placing disk at the bottom, not where the user clicked
       const newGrid = [...state.grid];
       newGrid[targetRow][column] = state.currentPlayer;
 
@@ -223,6 +245,7 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
         };
       }
 
+      // check for draw
       const isBoardFull = newGrid.every((row) =>
         row.every((cell) => cell !== null)
       );
@@ -241,7 +264,7 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
         grid: newGrid,
         currentPlayer:
           state.currentPlayer === "player1" ? "player2" : "player1",
-        timer: 30,
+        timer: 15,
       };
 
     case "PLAY_AGAIN":
@@ -253,23 +276,10 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
         scores: state.scores,
         winner: undefined,
         isGameActive: true,
-        timer: 30,
+        timer: 15,
         currentPlayer:
           state.currentPlayer === "player1" ? "player2" : "player1",
       };
-
-    case "TIMER_TICK": {
-      if (state.timer > 1) {
-        return { ...state, timer: state.timer - 1 };
-      } else {
-        return {
-          ...state,
-          timer: 30,
-          currentPlayer:
-            state.currentPlayer === "player1" ? "player2" : "player1",
-        };
-      }
-    }
 
     case "RESTART_GAME":
       return {
@@ -303,11 +313,14 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
   }
 };
 
+// create your context and pass in the necessary types
 const GameContext = createContext<GameActionProps | undefined>(undefined);
 
+// then create a game provider so as we can wrap ur app
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  // create our dispatch and state function for useReducer
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
 
   const value: GameActionProps = {
@@ -336,6 +349,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
       dispatch({ type: "CHECK_WINNER" });
     },
 
+    updateTimer: () => {
+      dispatch({ type: "TIME_EXPIRED" });
+    },
+
     playAgain: () => {
       dispatch({ type: "PLAY_AGAIN" });
     },
@@ -354,10 +371,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
 
     dropDisc: (column) => {
       dispatch({ type: "DROP_DISC", payload: { columnId: column } });
-    },
-
-    timerTick: () => {
-      dispatch({ type: "TIMER_TICK" });
     },
   };
 

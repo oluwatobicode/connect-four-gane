@@ -1,9 +1,24 @@
+import { useEffect } from "react";
 import { useGameContext } from "../contexts/GameProvider";
 
 const Board = () => {
-  const { state } = useGameContext();
+  const { state, playAgain, timerTick } = useGameContext();
 
-  console.log(state);
+  const handlePlayAgain = () => {
+    playAgain();
+  };
+
+  console.log(state.timer);
+
+  useEffect(() => {
+    if (!state.isGameActive) return;
+
+    const interval = setInterval(() => {
+      timerTick();
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [state.isGameActive, state.currentPlayer]);
 
   return (
     <div className="w-full h-full min-h-screen bg-[#7945FF]">
@@ -32,7 +47,7 @@ const Board = () => {
 
               <div className="absolute inset-0 flex flex-col gap-2 pt-3 items-center justify-center">
                 <h2
-                  className={`font-bold text-[12px] md:text-[16px] ${
+                  className={`font-bold text-[16px] ${
                     state.currentPlayer === "player1"
                       ? "text-[#FFF]"
                       : "text-[#000]"
@@ -43,7 +58,7 @@ const Board = () => {
                     : "PLAYER 2'S TURN"}
                 </h2>
                 <h2
-                  className={`font-bold text-xs md:text-[56px] ${
+                  className={`font-bold text-[56px] ${
                     state.currentPlayer === "player1"
                       ? "text-[#FFF]"
                       : "text-[#000]"
@@ -64,7 +79,10 @@ const Board = () => {
                 <h2 className="font-bold text-xs md:text-[56px] text-black">
                   WINS!
                 </h2>
-                <button className="cursor-pointer w-[130px] h-[39px] text-white bg-[#5C2DD5] font-bold rounded-[20px] text-[16px]">
+                <button
+                  onClick={handlePlayAgain}
+                  className="cursor-pointer w-[130px] h-[39px] text-white bg-[#5C2DD5] font-bold rounded-[20px] text-[16px]"
+                >
                   PLAY AGAIN
                 </button>
               </div>
