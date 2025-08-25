@@ -1,7 +1,8 @@
+import { useEffect } from "react";
 import { useGameContext } from "../contexts/GameProvider";
 
 const GameGrid = () => {
-  const { state, dropDisc } = useGameContext();
+  const { state, dropDisc, playAgain, timerTick } = useGameContext();
 
   const handleColumnClick = (colIndex: number) => {
     if (state.isGameActive) {
@@ -9,9 +10,23 @@ const GameGrid = () => {
     }
   };
 
+  const handlePlayAgain = () => {
+    playAgain();
+  };
+
+  useEffect(() => {
+    if (!state.isGameActive) return;
+
+    const interval = setInterval(() => {
+      timerTick();
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [state.isGameActive, state.currentPlayer]);
+
   return (
-    <main className="min-h-screen relative">
-      <div className="grid grid-rows-2 grid-cols-2 md:grid-cols-4 md:grid-rows-1 items-center justify-center">
+    <main className="min-h-screen flex flex-col items-center justify-center">
+      <div className="grid grid-rows-1 gap-[50px] grid-cols-2 md:grid-cols-4 md:grid-rows-1 items-center justify-center">
         <div className="flex items-center justify-center md:col-start-1 row-start-1 md:row-start-1">
           <div className="flex  relative flex-col items-center justify-center md:w-[141px] md:h-[187px] w-[142px] h-[81px] bg-white border-4 border-[#000] rounded-[20px] shadow-[0px_8px_0px_#000000]">
             <div className="absolute md:transform md:-translate-y-1/2 md:-top-2 -left-6 md:left-10">
@@ -94,6 +109,69 @@ const GameGrid = () => {
               )}
             </div>
           </div>
+
+          <div className="absolute bottom-5 md:bottom-15 left-1/2 transform -translate-x-1/2 translate-y-full z-30  flex items-center justify-center">
+            {state.isGameActive && (
+              <div className="relative">
+                {state.currentPlayer === "player1" && (
+                  <img
+                    src="/images/turn-background-red.svg"
+                    alt="Player 1 turn indicator"
+                    className="w-auto h-auto"
+                  />
+                )}
+                {state.currentPlayer === "player2" && (
+                  <img
+                    src="/images/turn-background-yellow.svg"
+                    alt="Player 2 turn indicator"
+                    className="w-auto h-auto"
+                  />
+                )}
+
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="pt-10 text-center">
+                    <h2
+                      className={`font-bold text-[16px] ${
+                        state.currentPlayer === "player1"
+                          ? "text-[#FFF]"
+                          : "text-[#000]"
+                      }`}
+                    >
+                      {state.currentPlayer === "player1"
+                        ? "PLAYER 1'S TURN"
+                        : "PLAYER 2'S TURN"}
+                    </h2>
+                    <h2
+                      className={`font-bold text-[56px] ${
+                        state.currentPlayer === "player1"
+                          ? "text-[#FFF]"
+                          : "text-[#000]"
+                      }`}
+                    >
+                      {state.timer}s
+                    </h2>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {state.winner && (
+              <div className="relative w-[285px] h-[160px] rounded-[20px] bg-[#fff] border-2 border-[#000] shadow-[0px_10px_0px_#000000] flex items-center justify-center">
+                <div className="absolute flex flex-col items-center justify-center ">
+                  <h2 className="font-bold text-[16px] text-black">
+                    {state.winner === "player1" ? "PLAYER 1" : "PLAYER 2"}
+                  </h2>
+                  <h2 className="font-bold text-[56px] text-black">WINS!</h2>
+                  <button
+                    onClick={handlePlayAgain}
+                    className="cursor-pointer w-[130px] h-[39px] text-white bg-[#5C2DD5] font-bold rounded-[20px] text-[16px]"
+                  >
+                    PLAY AGAIN
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center justify-center row-start-1 md:row-start-1">
@@ -110,6 +188,12 @@ const GameGrid = () => {
           </div>
         </div>
       </div>
+
+      <div
+        className={`w-full h-[250px] relative bg-[#5C2DD5] rounded-tl-[60px] rounded-tr-[60px]  ${
+          state.winner === "player1" ? "bg-[#FD6687]" : " "
+        } ${state.winner === "player2" ? "bg-[#FFCE67]" : " "}`}
+      ></div>
     </main>
   );
 };
