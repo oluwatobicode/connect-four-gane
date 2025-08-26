@@ -15,22 +15,31 @@ const GameGrid = () => {
   };
 
   useEffect(() => {
+    let interval = undefined;
     if (!state.isGameActive) return;
 
-    const interval = setInterval(() => {
-      timerTick();
-    }, 1000);
+    if (state.isGameActive) {
+      interval = setInterval(() => {
+        timerTick();
+      }, 1000);
+    } else if (state.isGameActive === false) {
+      clearInterval(interval);
+    }
 
     return () => clearInterval(interval);
   }, [state.isGameActive, state.currentPlayer]);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center">
-      <div className="grid grid-rows-1 gap-[50px] grid-cols-2 md:grid-cols-4 md:grid-rows-1 items-center justify-center">
+      <div className="grid grid-rows-1 gap-[50px] md:gap-0 grid-cols-2 md:grid-cols-4 md:grid-rows-1 items-center justify-center">
         <div className="flex items-center justify-center md:col-start-1 row-start-1 md:row-start-1">
           <div className="flex  relative flex-col items-center justify-center md:w-[141px] md:h-[187px] w-[142px] h-[81px] bg-white border-4 border-[#000] rounded-[20px] shadow-[0px_8px_0px_#000000]">
             <div className="absolute md:transform md:-translate-y-1/2 md:-top-2 -left-6 md:left-10">
-              <img src="/images/player-one.svg" alt="player 1 icon" />
+              {state.player2 === "human" ? (
+                <img src="/images/player-one.svg" alt="player 1 icon" />
+              ) : (
+                <img src="/images/you.svg" alt="player 2 icon" />
+              )}
             </div>
 
             <h1 className="text-black mt-3 text-[16px] md:text-[20px] font-bold">
@@ -155,13 +164,19 @@ const GameGrid = () => {
               </div>
             )}
 
-            {state.winner && (
+            {state.winner && state.winner !== "draw" && (
               <div className="relative w-[285px] h-[160px] rounded-[20px] bg-[#fff] border-2 border-[#000] shadow-[0px_10px_0px_#000000] flex items-center justify-center">
                 <div className="absolute flex flex-col items-center justify-center ">
                   <h2 className="font-bold text-[16px] text-black">
-                    {state.winner === "player1" ? "PLAYER 1" : "PLAYER 2"}
+                    {state.winner === "player1" || "player2"
+                      ? state.winner
+                      : " "}
                   </h2>
-                  <h2 className="font-bold text-[56px] text-black">WINS!</h2>
+                  <h2 className="font-bold text-[56px] text-black">
+                    {state.winner === "player1" || "player2"
+                      ? "WINS!"
+                      : "DRAW!"}
+                  </h2>
                   <button
                     onClick={handlePlayAgain}
                     className="cursor-pointer w-[130px] h-[39px] text-white bg-[#5C2DD5] font-bold rounded-[20px] text-[16px]"
@@ -177,10 +192,14 @@ const GameGrid = () => {
         <div className="flex items-center justify-center row-start-1 md:row-start-1">
           <div className="flex relative  flex-col items-center justify-center border-4 border-[#000] font-medium md:w-[141px] md:h-[187px] w-[142px] h-[81px] bg-white rounded-[20px] shadow-[0px_8px_0px_#000000]">
             <div className="absolute md:transform md:-translate-y-1/2 md:-top-2 -right-6 md:right-10">
-              <img src="/images/player-two.svg" alt="player 2 icon" />
+              {state.player2 === "human" ? (
+                <img src="/images/player-two.svg" alt="player 2 icon" />
+              ) : (
+                <img src="/images/cpu.svg" alt="player 2 icon" />
+              )}
             </div>
             <h1 className="text-black mt-3 text-[16px] md:text-[20px] font-bold">
-              Player 2
+              {state.player2 === "human" ? "Player 2 " : "CPU"}
             </h1>
             <span className="text-black text-[32px] font-bold md:text-[56px]">
               {state.scores.player2}

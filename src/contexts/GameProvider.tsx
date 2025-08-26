@@ -100,7 +100,7 @@ const checkWinCondition = (
   }
 
   // 2)check vertical
-  count = 1; // reset count for vertical check
+  count = 1;
   for (let r = row + 1; r < 6; r++) {
     if (grid[r][col] === player) {
       count++;
@@ -271,6 +271,13 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
       }
     }
 
+    case "GAME_PAUSE": {
+      return {
+        ...state,
+        isGameActive: false,
+      };
+    }
+
     case "RESTART_GAME":
       return {
         ...initialGameState,
@@ -282,6 +289,8 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
     case "CONTINUE_GAME":
       return {
         ...state,
+        isGameActive: true,
+        timer: state.timer - 1,
       };
 
     case "SHOW_MENU":

@@ -2,9 +2,10 @@ import Modal from "../ui/Modal";
 import { useGameContext } from "../contexts/GameProvider";
 
 const Navbar = () => {
-  const { showMenu, state, restartGame } = useGameContext();
+  const { showMenu, state, restartGame, pauseGame } = useGameContext();
 
   const onClick = () => {
+    pauseGame();
     showMenu({ show: true });
   };
 

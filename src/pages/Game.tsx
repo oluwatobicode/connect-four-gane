@@ -3,11 +3,9 @@ import Navbar from "../ui/Navbar";
 
 const Game = () => {
   return (
-    <div className=" min-h-screen bg-[#7945FF]">
-      <div className="max-auto max-w-auto ">
-        <Navbar />
-        <GameGrid />
-      </div>
+    <div className="min-h-screen max-auto max-w-auto bg-[#7945FF]">
+      <Navbar />
+      <GameGrid />
     </div>
   );
 };
