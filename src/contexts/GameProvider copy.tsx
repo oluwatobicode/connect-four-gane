@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer } from "react";
+import toast from "react-hot-toast";
 
 interface GameState {
   grid: (null | "player1" | "player2")[][];
@@ -23,20 +24,22 @@ interface GameActionProps {
   }) => void;
   restartGame: () => void;
   pauseGame: () => void;
-  updateTimer: () => void;
+  timerTick: () => void;
   checkWinner: () => void;
   animationComplete: () => void;
   quitGame: () => void;
   showMenu: (option: { show: boolean }) => void;
   dropDisc: (columnId: number) => void;
+  cpuDropDisc: () => void;
   playAgain: () => void;
   continueGame: () => void;
 }
 
+// firstly create an initial state for the game
 const initialGameState: GameState = {
   winner: undefined,
   isGameActive: true,
-  timer: 15,
+  timer: 30,
   grid: Array(6)
     .fill(null)
     .map(() => Array(7).fill(null)),
@@ -58,7 +61,6 @@ type gameActions =
     }
   | { type: "DROP_DISC"; payload: { columnId: number } }
   | { type: "ANIMATION_COMPLETE" }
-  | { type: "TIME_EXPIRED" }
   | { type: "RESTART_GAME" }
   | { type: "PLAY_AGAIN" }
   | { type: "CONTINUE_GAME" }
@@ -66,20 +68,23 @@ type gameActions =
   | { type: "GAME_PAUSE" }
   | { type: "QUIT_GAME" }
   | { type: "TIMER_TICK" }
-  | { type: "SWITCH_PLAYER" }
+  | { type: "CPU_DROP_DISC" }
   | { type: "CHECK_WINNER" };
 
 // HELPER FUNCTION
 
 /*
+  grid: Array(6)
+    .fill(null)
+    .map(() => Array(7).fill(null)),
 // Your Connect Four grid (6 rows × 7 columns)
 grid = [
   [null, null, null, null, null, null, null], // Row 0 (TOP)
   [null, null, null, null, null, null, null], // Row 1
   [null, null, null, null, null, null, null], // Row 2  
   [null, null, null, null, null, null, null], // Row 3
-  [null, null, null, null, null, 3, null], // Row 4
-  [null, null, null, null, null, 3, null], // Row 5 (BOTTOM)
+  [null, null, null, null, null, null, null], // Row 4
+  [null, null, null, null, null, null, null], // Row 5 (BOTTOM)
 ]
 //  ↑     ↑     ↑     ↑     ↑     ↑     ↑
 //  Col0  Col1  Col2  Col3  Col4  Col5  Col6
@@ -117,7 +122,7 @@ const checkWinCondition = (
   }
 
   // 2)check vertical
-  count = 1; // reset count for vertical check
+  count = 1;
   for (let r = row + 1; r < 6; r++) {
     if (grid[r][col] === player) {
       count++;
@@ -176,15 +181,12 @@ const checkLowestRow = (
   grid: (null | "player1" | "player2")[][],
   column: number
 ): number => {
-  // starting from bottom row index 5 to the top
   for (let row = 5; row >= 0; row--) {
     if (grid[row][column] === null) {
-      // then we will return the lowest empty row
       return row;
     }
   }
 
-  // if the column is full
   return -1;
 };
 
@@ -195,7 +197,8 @@ const checkIsColumnFull = (
   return grid[0][column] !== null;
 };
 
-// create a reducer with a switch type that contains all of our game logic
+// create a reducer function (firstly pass in the Game state which is the initial state and pass in the game actions as the second argument)
+// secondly inside it create a switch statement that toggles all of our action.type returning the state and having their own logic
 const gameReducer = (state: GameState, action: gameActions): GameState => {
   switch (action.type) {
     case "GAME_START":
@@ -209,15 +212,14 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
     case "DROP_DISC":
       const column = action.payload.columnId;
 
-      // checks if the column is full
       if (checkIsColumnFull(state.grid, column)) {
         // i will pass a toast notification here
-        console.log("Column is full!");
+        toast.error("Column is full!");
         return state;
       }
-      // find where the disc should actually land
+
       const targetRow = checkLowestRow(state.grid, column);
-      // placing disk at the bottom, not where the user clicked
+
       const newGrid = [...state.grid];
       newGrid[targetRow][column] = state.currentPlayer;
 
@@ -245,7 +247,6 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
         };
       }
 
-      // check for draw
       const isBoardFull = newGrid.every((row) =>
         row.every((cell) => cell !== null)
       );
@@ -264,7 +265,64 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
         grid: newGrid,
         currentPlayer:
           state.currentPlayer === "player1" ? "player2" : "player1",
-        timer: 15,
+        timer: 30,
+      };
+
+    case "CPU_DROP_DISC":
+      let randomColumn;
+
+      do {
+        randomColumn = Math.floor(Math.random() * 7);
+      } while (checkIsColumnFull(state.grid, randomColumn));
+
+      const cpuTargetRow = checkLowestRow(state.grid, randomColumn);
+
+      const newGridCpu = [...state.grid];
+      newGridCpu[cpuTargetRow][randomColumn] = state.currentPlayer;
+
+      const hasCpuWon = checkWinCondition(
+        newGridCpu,
+        cpuTargetRow,
+        randomColumn,
+        state.currentPlayer
+      );
+
+      if (hasCpuWon) {
+        const newScores = { ...state.scores };
+        if (state.currentPlayer === "player1") {
+          newScores.player1++;
+        } else {
+          newScores.player2++;
+        }
+
+        return {
+          ...state,
+          grid: newGridCpu,
+          winner: state.currentPlayer,
+          scores: state.scores,
+          isGameActive: false,
+        };
+      }
+
+      const IsBoardFull = newGridCpu.every((row) =>
+        row.every((cell) => cell !== null)
+      );
+
+      if (IsBoardFull) {
+        return {
+          ...state,
+          grid: newGridCpu,
+          winner: "draw",
+          isGameActive: false,
+        };
+      }
+
+      return {
+        ...state,
+        grid: newGridCpu,
+        currentPlayer:
+          state.currentPlayer === "player1" ? "player2" : "player1",
+        timer: 30,
       };
 
     case "PLAY_AGAIN":
@@ -276,10 +334,30 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
         scores: state.scores,
         winner: undefined,
         isGameActive: true,
-        timer: 15,
+        timer: 30,
         currentPlayer:
           state.currentPlayer === "player1" ? "player2" : "player1",
       };
+
+    case "TIMER_TICK": {
+      if (state.timer > 1) {
+        return { ...state, timer: state.timer - 1 };
+      } else {
+        return {
+          ...state,
+          timer: 30,
+          currentPlayer:
+            state.currentPlayer === "player1" ? "player2" : "player1",
+        };
+      }
+    }
+
+    case "GAME_PAUSE": {
+      return {
+        ...state,
+        isGameActive: false,
+      };
+    }
 
     case "RESTART_GAME":
       return {
@@ -292,6 +370,8 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
     case "CONTINUE_GAME":
       return {
         ...state,
+        isGameActive: true,
+        timer: state.timer - 1,
       };
 
     case "SHOW_MENU":
@@ -313,16 +393,18 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
   }
 };
 
-// create your context and pass in the necessary types
+// create a gamecontext with use createContext
 const GameContext = createContext<GameActionProps | undefined>(undefined);
 
-// then create a game provider so as we can wrap ur app
+// THEN EXPORT OUR GAME PROVIDER
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  // create our dispatch and state function for useReducer
+  // CREATE A USEREDUCER HOOK WHERE WE PASS IN OUR [STATE, DISPATCH]
+  // THEN IN THE USE REDUCER HOOK PASS IN THE GAMEREDUCER AND THE INITIALGAMESTATE
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
 
+  // we will create an array of objects where we can disptach out actions
   const value: GameActionProps = {
     state,
 
@@ -349,10 +431,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
       dispatch({ type: "CHECK_WINNER" });
     },
 
-    updateTimer: () => {
-      dispatch({ type: "TIME_EXPIRED" });
-    },
-
     playAgain: () => {
       dispatch({ type: "PLAY_AGAIN" });
     },
@@ -372,11 +450,22 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
     dropDisc: (column) => {
       dispatch({ type: "DROP_DISC", payload: { columnId: column } });
     },
+
+    cpuDropDisc: () => {
+      dispatch({ type: "CPU_DROP_DISC" });
+    },
+
+    timerTick: () => {
+      dispatch({ type: "TIMER_TICK" });
+    },
   };
+
+  // then we will pass in the value
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 };
 
+// create a custom hook in which we can use the useGameContext tp get our state and usereducer functions
 export const useGameContext = () => {
   const context = useContext(GameContext);
   if (context === undefined)

@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useGameContext } from "../contexts/GameProvider";
 
 const GameGrid = () => {
-  const { state, dropDisc, playAgain, timerTick } = useGameContext();
+  const { state, dropDisc, playAgain, timerTick, cpuDropDisc } =
+    useGameContext();
 
   const handleColumnClick = (colIndex: number) => {
     if (state.isGameActive) {
@@ -28,6 +29,18 @@ const GameGrid = () => {
 
     return () => clearInterval(interval);
   }, [state.isGameActive, state.currentPlayer]);
+
+  useEffect(() => {
+    if (
+      state.currentPlayer === "player2" &&
+      state.player2 === "cpu" &&
+      state.isGameActive
+    ) {
+      setTimeout(() => {
+        cpuDropDisc();
+      }, 1000);
+    }
+  }, [state.currentPlayer]);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center">

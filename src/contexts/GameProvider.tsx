@@ -30,6 +30,7 @@ interface GameActionProps {
   quitGame: () => void;
   showMenu: (option: { show: boolean }) => void;
   dropDisc: (columnId: number) => void;
+  cpuDropDisc: () => void;
   playAgain: () => void;
   continueGame: () => void;
 }
@@ -51,7 +52,6 @@ const initialGameState: GameState = {
   player2: undefined,
 };
 
-// create the actions that will happen in our app
 type gameActions =
   | {
       type: "GAME_START";
@@ -66,9 +66,20 @@ type gameActions =
   | { type: "GAME_PAUSE" }
   | { type: "QUIT_GAME" }
   | { type: "TIMER_TICK" }
+  | { type: "CPU_DROP_DISC" }
   | { type: "CHECK_WINNER" };
 
-// HELPER FUNCTION
+console.log(
+  Array(6)
+    .fill("hi")
+    .map(() => Array(7).fill("hello"))
+);
+
+console.log(
+  Array(6)
+    .fill("HELLO FROM ME")
+    .map(() => Array(7).fill("HI FROM CODING NINJA"))
+);
 
 const checkWinCondition = (
   grid: (null | "player1" | "player2")[][],
@@ -189,7 +200,6 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
       const column = action.payload.columnId;
 
       if (checkIsColumnFull(state.grid, column)) {
-        // i will pass a toast notification here
         toast.error("Column is full!");
         return state;
       }
@@ -239,6 +249,63 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
       return {
         ...state,
         grid: newGrid,
+        currentPlayer:
+          state.currentPlayer === "player1" ? "player2" : "player1",
+        timer: 30,
+      };
+
+    case "CPU_DROP_DISC":
+      let randomColumn;
+
+      do {
+        randomColumn = Math.floor(Math.random() * 7);
+      } while (checkIsColumnFull(state.grid, randomColumn));
+
+      const cpuTargetRow = checkLowestRow(state.grid, randomColumn);
+
+      const newGridCpu = [...state.grid];
+      newGridCpu[cpuTargetRow][randomColumn] = state.currentPlayer;
+
+      const hasCpuWon = checkWinCondition(
+        newGridCpu,
+        cpuTargetRow,
+        randomColumn,
+        state.currentPlayer
+      );
+
+      if (hasCpuWon) {
+        const newScores = { ...state.scores };
+        if (state.currentPlayer === "player1") {
+          newScores.player1++;
+        } else {
+          newScores.player2++;
+        }
+
+        return {
+          ...state,
+          grid: newGridCpu,
+          winner: state.currentPlayer,
+          scores: newScores,
+          isGameActive: false,
+        };
+      }
+
+      const IsBoardFull = newGridCpu.every((row) =>
+        row.every((cell) => cell !== null)
+      );
+
+      if (IsBoardFull) {
+        return {
+          ...state,
+          grid: newGridCpu,
+          winner: "draw",
+          isGameActive: false,
+        };
+      }
+
+      return {
+        ...state,
+        grid: newGridCpu,
         currentPlayer:
           state.currentPlayer === "player1" ? "player2" : "player1",
         timer: 30,
@@ -363,6 +430,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
 
     dropDisc: (column) => {
       dispatch({ type: "DROP_DISC", payload: { columnId: column } });
+    },
+
+    cpuDropDisc: () => {
+      dispatch({ type: "CPU_DROP_DISC" });
     },
 
     timerTick: () => {
