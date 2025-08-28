@@ -186,6 +186,52 @@ const checkIsColumnFull = (
   return grid[0][column] !== null;
 };
 
+const getCpuMove = (grid: (null | "player1" | "player2")[][]) => {
+  // 1) CHECKING FOR OBVIOUS WINS
+  for (let col = 0; col < 7; col++) {
+    if (!checkIsColumnFull(grid, col)) {
+      const targetRow = checkLowestRow(grid, col);
+      const testGrid = grid.map((row) => [...row]);
+      testGrid[targetRow][col] = "player2";
+
+      if (checkWinCondition(testGrid, targetRow, col, "player2")) {
+        return col;
+      }
+    }
+  }
+
+  // 2) BLOCKING THE PLAYER 1
+  for (let col = 0; col < 7; col++) {
+    if (!checkIsColumnFull(grid, col)) {
+      const targetRow = checkLowestRow(grid, col);
+      const testGrid = grid.map((row) => [...row]);
+      testGrid[targetRow][col] = "player1";
+
+      if (checkWinCondition(testGrid, targetRow, col, "player1")) {
+        return col;
+      }
+    }
+  }
+
+  // 3)take center wins
+  const centerCol = [3, 2, 4, 1, 5, 0, 6];
+
+  for (let col of centerCol) {
+    if (!checkIsColumnFull(grid, col)) {
+      return col;
+    }
+  }
+
+  // 4) ALLOWING THE CPU TO TAKE RANDOM COLUMNS (THE PLAYER WINS EASILY IN THIS MODE!)
+  let randomColumn;
+
+  do {
+    randomColumn = Math.floor(Math.random() * 7);
+  } while (checkIsColumnFull(grid, randomColumn));
+
+  return randomColumn;
+};
+
 const gameReducer = (state: GameState, action: gameActions): GameState => {
   switch (action.type) {
     case "GAME_START":
@@ -255,21 +301,17 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
       };
 
     case "CPU_DROP_DISC":
-      let randomColumn;
+      const cpuColumn = getCpuMove(state.grid);
 
-      do {
-        randomColumn = Math.floor(Math.random() * 7);
-      } while (checkIsColumnFull(state.grid, randomColumn));
-
-      const cpuTargetRow = checkLowestRow(state.grid, randomColumn);
+      const cpuTargetRow = checkLowestRow(state.grid, cpuColumn);
 
       const newGridCpu = [...state.grid];
-      newGridCpu[cpuTargetRow][randomColumn] = state.currentPlayer;
+      newGridCpu[cpuTargetRow][cpuColumn] = state.currentPlayer;
 
       const hasCpuWon = checkWinCondition(
         newGridCpu,
         cpuTargetRow,
-        randomColumn,
+        cpuColumn,
         state.currentPlayer
       );
 

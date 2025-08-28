@@ -36,11 +36,13 @@ const GameGrid = () => {
       state.player2 === "cpu" &&
       state.isGameActive
     ) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         cpuDropDisc();
       }, 1000);
+
+      return () => clearTimeout(timer);
     }
-  }, [state.currentPlayer]);
+  }, [state.currentPlayer, state.isGameActive]);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center">
