@@ -16,7 +16,7 @@ A modern implementation of the classic Connect Four game built with React and Ty
 - [React](https://reactjs.org/) - Frontend library
 - [TypeScript](https://www.typescriptlang.org/) - Programming language
 - [Vite](https://vitejs.dev/) - Build tool and development server
-- [Context API](https://reactjs.org/docs/context.html) - State management
+- [useReducer + Context API](https://reactjs.org/docs/context.html) - State management
 - CSS - Styling
 
 ## 🧠 Technical Implementation

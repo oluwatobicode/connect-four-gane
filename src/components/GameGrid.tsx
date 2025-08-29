@@ -178,20 +178,31 @@ const GameGrid = () => {
                 </div>
               </div>
             )}
-
             {state.winner && state.winner !== "draw" && (
               <div className="relative w-[285px] h-[160px] rounded-[20px] bg-[#fff] border-2 border-[#000] shadow-[0px_10px_0px_#000000] flex items-center justify-center">
                 <div className="absolute flex flex-col items-center justify-center ">
                   <h2 className="font-bold text-[16px] text-black">
-                    {state.winner === "player1" || "player2"
-                      ? state.winner
-                      : " "}
+                    {state.winner === "player1"
+                      ? "PLAYER 1"
+                      : state.winner === "player2"
+                      ? "PLAYER 2"
+                      : ""}
                   </h2>
-                  <h2 className="font-bold text-[56px] text-black">
-                    {state.winner === "player1" || "player2"
-                      ? "WINS!"
-                      : "DRAW!"}
-                  </h2>
+                  <h2 className="font-bold text-[56px] text-black">WINS!</h2>
+                  <button
+                    onClick={handlePlayAgain}
+                    className="cursor-pointer w-[130px] h-[39px] text-white bg-[#5C2DD5] font-bold rounded-[20px] text-[16px]"
+                  >
+                    PLAY AGAIN
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {state.winner === "draw" && (
+              <div className="relative w-[285px] h-[160px] rounded-[20px] bg-[#fff] border-2 border-[#000] shadow-[0px_10px_0px_#000000] flex items-center justify-center">
+                <div className="absolute flex flex-col items-center justify-center ">
+                  <h2 className="font-bold text-[56px] text-black">DRAW!</h2>
                   <button
                     onClick={handlePlayAgain}
                     className="cursor-pointer w-[130px] h-[39px] text-white bg-[#5C2DD5] font-bold rounded-[20px] text-[16px]"
