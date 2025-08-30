@@ -15,6 +15,18 @@ const GameGrid = () => {
     playAgain();
   };
 
+  const getTurnText = () => {
+    if (state.currentPlayer === "player1") {
+      return "PLAYER 1'S TURN";
+    } else {
+      if (state.player2 === "cpu") {
+        return "CPU'S TURN";
+      } else {
+        return "PLAYER 2'S TURN";
+      }
+    }
+  };
+
   useEffect(() => {
     let interval = undefined;
     if (!state.isGameActive) return;
@@ -161,9 +173,7 @@ const GameGrid = () => {
                           : "text-[#000]"
                       }`}
                     >
-                      {state.currentPlayer === "player1"
-                        ? "PLAYER 1'S TURN"
-                        : "PLAYER 2'S TURN"}
+                      {getTurnText()}
                     </h2>
                     <h2
                       className={`font-bold text-[56px] ${
@@ -184,9 +194,9 @@ const GameGrid = () => {
                   <h2 className="font-bold text-[16px] text-black">
                     {state.winner === "player1"
                       ? "PLAYER 1"
-                      : state.winner === "player2"
-                      ? "PLAYER 2"
-                      : ""}
+                      : state.winner === "player2" && state.player2 === "cpu"
+                      ? "CPU"
+                      : "PLAYER 2"}
                   </h2>
                   <h2 className="font-bold text-[56px] text-black">WINS!</h2>
                   <button

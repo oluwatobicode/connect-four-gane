@@ -232,6 +232,8 @@ const getCpuMove = (grid: (null | "player1" | "player2")[][]) => {
   return randomColumn;
 };
 
+// minmax algorithm with pruning
+
 const gameReducer = (state: GameState, action: gameActions): GameState => {
   switch (action.type) {
     case "GAME_START":
