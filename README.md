@@ -5,7 +5,7 @@ A modern implementation of the classic Connect Four game built with React and Ty
 ## 🌟 Features
 
 - Player vs Player mode
-- Player vs CPU mode with intelligent AI
+- Player vs CPU mode with intelligent AI (MinMax algorithm with Alpha Beta pruning)
 - Responsive design for both desktop and mobile
 - Interactive game board with animations
 - Score tracking
@@ -17,7 +17,7 @@ A modern implementation of the classic Connect Four game built with React and Ty
 - [TypeScript](https://www.typescriptlang.org/) - Programming language
 - [Vite](https://vitejs.dev/) - Build tool and development server
 - [useReducer + Context API](https://reactjs.org/docs/context.html) - State management
-- CSS - Styling
+- [TailwindCSS](https://tailwindcss.com/docs/guides/vite) - Styling
 
 ## 🧠 Technical Implementation
 
@@ -41,11 +41,20 @@ Throughout this project, I gained experience in:
 
 ## 🎯 Game Logic Highlights
 
-The CPU's decision-making process follows a priority-based strategy:
+The CPU's decision making process follows a priority based strategy:
 1️⃣ Checks for obvious wins
 2️⃣ Blocks the player's winning moves
 3️⃣ Prioritizes center wins for strategic advantage
 4️⃣ Incorporates randomization for unpredictable gameplay
+
+## 🤖 Couple of things I plan to advance it with
+
+1. A multi player game room with voice chat features
+2. Ability to join a room
+3. Ability to create a game room with you and your friends
+4. Ability to view a room
+5. Dropping disc animation
+6. Ability to set the game difficulty
 
 ## 🚀 Getting Started
 

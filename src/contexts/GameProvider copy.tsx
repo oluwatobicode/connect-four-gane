@@ -35,7 +35,6 @@ interface GameActionProps {
   continueGame: () => void;
 }
 
-// firstly create an initial state for the game
 const initialGameState: GameState = {
   winner: undefined,
   isGameActive: true,
@@ -62,7 +61,6 @@ interface MinimaxResult {
   score: number;
 }
 
-// create the actions that will happen in our app
 type gameActions =
   | {
       type: "GAME_START";
@@ -404,7 +402,7 @@ const minimax = (
 
       beta = Math.min(beta, value);
       if (beta <= alpha) {
-        break; // Alpha-beta pruning
+        break;
       }
     }
 
