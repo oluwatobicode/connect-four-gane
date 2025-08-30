@@ -53,6 +53,15 @@ const initialGameState: GameState = {
   player2: undefined,
 };
 
+type Player = "player1" | "player2";
+type Cell = null | Player;
+type Grid = Cell[][];
+
+interface MinimaxResult {
+  column: number | null;
+  score: number;
+}
+
 // create the actions that will happen in our app
 type gameActions =
   | {
@@ -197,6 +206,258 @@ const checkIsColumnFull = (
   return grid[0][column] !== null;
 };
 
+// minmax algorithm
+
+// Helper function to evaluate a window of 4 positions
+const evaluateWindow = (window: Cell[], player: Player): number => {
+  let score = 0;
+  const opponent: Player = player === "player2" ? "player1" : "player2";
+
+  const playerCount = window.filter((cell) => cell === player).length;
+  const opponentCount = window.filter((cell) => cell === opponent).length;
+  const emptyCount = window.filter((cell) => cell === null).length;
+
+  if (playerCount === 4) {
+    score += 100;
+  } else if (playerCount === 3 && emptyCount === 1) {
+    score += 10;
+  } else if (playerCount === 2 && emptyCount === 2) {
+    score += 2;
+  }
+
+  if (opponentCount === 3 && emptyCount === 1) {
+    score -= 80;
+  }
+
+  return score;
+};
+
+// Evaluate the entire board position
+const evaluateBoard = (grid: Grid, player: Player = "player2"): number => {
+  let score = 0;
+
+  // Score center column (playing in center is generally good)
+  const centerColumn = 3;
+  const centerArray: Cell[] = [];
+  for (let row = 0; row < 6; row++) {
+    centerArray.push(grid[row][centerColumn]);
+  }
+  const centerCount = centerArray.filter((cell) => cell === player).length;
+  score += centerCount * 3;
+
+  // Score horizontal positions
+  for (let row = 0; row < 6; row++) {
+    for (let col = 0; col < 4; col++) {
+      const window: Cell[] = [
+        grid[row][col],
+        grid[row][col + 1],
+        grid[row][col + 2],
+        grid[row][col + 3],
+      ];
+      score += evaluateWindow(window, player);
+    }
+  }
+
+  // Score vertical positions
+  for (let col = 0; col < 7; col++) {
+    for (let row = 0; row < 3; row++) {
+      const window: Cell[] = [
+        grid[row][col],
+        grid[row + 1][col],
+        grid[row + 2][col],
+        grid[row + 3][col],
+      ];
+      score += evaluateWindow(window, player);
+    }
+  }
+
+  // Score positive diagonal (/)
+  for (let row = 3; row < 6; row++) {
+    for (let col = 0; col < 4; col++) {
+      const window: Cell[] = [
+        grid[row][col],
+        grid[row - 1][col + 1],
+        grid[row - 2][col + 2],
+        grid[row - 3][col + 3],
+      ];
+      score += evaluateWindow(window, player);
+    }
+  }
+
+  // Score negative diagonal (\)
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 4; col++) {
+      const window: Cell[] = [
+        grid[row][col],
+        grid[row + 1][col + 1],
+        grid[row + 2][col + 2],
+        grid[row + 3][col + 3],
+      ];
+      score += evaluateWindow(window, player);
+    }
+  }
+
+  return score;
+};
+
+// Check if the game is over (someone won or board is full)
+const isTerminalNode = (grid: Grid): boolean => {
+  // Check if someone won
+  for (let row = 0; row < 6; row++) {
+    for (let col = 0; col < 7; col++) {
+      if (grid[row][col] !== null) {
+        if (checkWinCondition(grid, row, col, grid[row][col] as Player)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  // Check if board is full
+  return grid[0].every((cell) => cell !== null);
+};
+
+// Get all valid columns (not full)
+const getValidColumns = (grid: Grid): number[] => {
+  const validCols: number[] = [];
+  for (let col = 0; col < 7; col++) {
+    if (!checkIsColumnFull(grid, col)) {
+      validCols.push(col);
+    }
+  }
+  return validCols;
+};
+
+// Main minimax function
+const minimax = (
+  grid: Grid,
+  depth: number,
+  alpha: number,
+  beta: number,
+  maximizingPlayer: boolean
+): MinimaxResult => {
+  const validColumns = getValidColumns(grid);
+  const isTerminal = isTerminalNode(grid);
+
+  if (depth === 0 || isTerminal) {
+    if (isTerminal) {
+      // Check who won
+      for (let row = 0; row < 6; row++) {
+        for (let col = 0; col < 7; col++) {
+          if (grid[row][col] !== null) {
+            if (checkWinCondition(grid, row, col, grid[row][col] as Player)) {
+              if (grid[row][col] === "player2") {
+                return { column: null, score: 100000000000000 };
+              } else if (grid[row][col] === "player1") {
+                return { column: null, score: -100000000000000 };
+              }
+            }
+          }
+        }
+      }
+      // It's a draw
+      return { column: null, score: 0 };
+    } else {
+      // Depth is 0
+      return { column: null, score: evaluateBoard(grid, "player2") };
+    }
+  }
+
+  if (maximizingPlayer) {
+    let value = -Infinity;
+    let column = validColumns[0];
+
+    for (const col of validColumns) {
+      const row = checkLowestRow(grid, col);
+      const tempGrid: Grid = grid.map((row) => [...row]);
+      tempGrid[row][col] = "player2";
+
+      const newScore = minimax(tempGrid, depth - 1, alpha, beta, false).score;
+
+      if (newScore > value) {
+        value = newScore;
+        column = col;
+      }
+
+      alpha = Math.max(alpha, value);
+      if (beta <= alpha) {
+        break; // Alpha-beta pruning
+      }
+    }
+
+    return { column, score: value };
+  } else {
+    let value = Infinity;
+    let column = validColumns[0];
+
+    for (const col of validColumns) {
+      const row = checkLowestRow(grid, col);
+      const tempGrid: Grid = grid.map((row) => [...row]);
+      tempGrid[row][col] = "player1";
+
+      const newScore = minimax(tempGrid, depth - 1, alpha, beta, true).score;
+
+      if (newScore < value) {
+        value = newScore;
+        column = col;
+      }
+
+      beta = Math.min(beta, value);
+      if (beta <= alpha) {
+        break; // Alpha-beta pruning
+      }
+    }
+
+    return { column, score: value };
+  }
+};
+
+// Updated CPU move function using minimax
+const getCpuMoveWithMinimax = (grid: Grid, difficulty: number = 4): number => {
+  const result = minimax(grid, difficulty, -Infinity, Infinity, true);
+  return result.column ?? 3; // Fallback to center column if null
+};
+
+// Replace your getCpuMove function with this enhanced version:
+const getCpuMoveEnhanced = (grid: Grid): number => {
+  // First, try to win immediately
+  for (let col = 0; col < 7; col++) {
+    if (!checkIsColumnFull(grid, col)) {
+      const targetRow = checkLowestRow(grid, col);
+      const testGrid: Grid = grid.map((row) => [...row]);
+      testGrid[targetRow][col] = "player2";
+
+      if (checkWinCondition(testGrid, targetRow, col, "player2")) {
+        return col;
+      }
+    }
+  }
+
+  // Then block player from winning
+  for (let col = 0; col < 7; col++) {
+    if (!checkIsColumnFull(grid, col)) {
+      const targetRow = checkLowestRow(grid, col);
+      const testGrid: Grid = grid.map((row) => [...row]);
+      testGrid[targetRow][col] = "player1";
+
+      if (checkWinCondition(testGrid, targetRow, col, "player1")) {
+        return col;
+      }
+    }
+  }
+
+  // Use minimax for strategic play
+  // the number makes it difficult to win
+  /* 
+  Depth Levels Explained:
+Depth 1: AI only looks 1 move ahead → "What happens if I play here?"
+Depth 2: AI looks 2 moves ahead → "What happens if I play here, then you play there?"
+Depth 4: AI looks 4 moves ahead → Plans multiple moves in advance
+Depth 6: AI looks 6 moves ahead → Very strategic, hard to beat
+  */
+  return getCpuMoveWithMinimax(grid, 4);
+};
+
 // create a reducer function (firstly pass in the Game state which is the initial state and pass in the game actions as the second argument)
 // secondly inside it create a switch statement that toggles all of our action.type returning the state and having their own logic
 const gameReducer = (state: GameState, action: gameActions): GameState => {
@@ -269,21 +530,17 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
       };
 
     case "CPU_DROP_DISC":
-      let randomColumn;
+      const cpuColumn = getCpuMoveEnhanced(state.grid);
 
-      do {
-        randomColumn = Math.floor(Math.random() * 7);
-      } while (checkIsColumnFull(state.grid, randomColumn));
-
-      const cpuTargetRow = checkLowestRow(state.grid, randomColumn);
+      const cpuTargetRow = checkLowestRow(state.grid, cpuColumn);
 
       const newGridCpu = [...state.grid];
-      newGridCpu[cpuTargetRow][randomColumn] = state.currentPlayer;
+      newGridCpu[cpuTargetRow][cpuColumn] = state.currentPlayer;
 
       const hasCpuWon = checkWinCondition(
         newGridCpu,
         cpuTargetRow,
-        randomColumn,
+        cpuColumn,
         state.currentPlayer
       );
 

@@ -33,7 +33,7 @@ const Settings = () => {
         onClick={handlePlayHuman}
         className="md:w-[400px] md:h-[72px] md:text-[24px] w-[335px] h-[72px] font-bold flex items-center justify-between cursor-pointer bg-[#FD6687] text-[#ffff] p-3 rounded-[20px] border-4 border-black mb-4 transition-all duration-200 hover:scale-105 active:scale-95 shadow-[0px_6px_0px_#000000] hover:shadow-[0px_6px_0px_#5C2DD5] hover:border-[#5C2DD5] hover:border-4"
       >
-        <span>PLAY VS CPU</span>
+        <span>PLAY VS CPU (AI)</span>
         <img src="/images/player-vs-cpu.svg" alt="player vs cpu" />
       </button>
 
