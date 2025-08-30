@@ -438,7 +438,7 @@ const minimax = (
 
       beta = Math.min(beta, value);
       if (beta <= alpha) {
-        break; // Alpha-beta pruning
+        break; // This the Alpha-beta pruning
       }
     }
 
@@ -641,10 +641,16 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
 
     case "RESTART_GAME":
       return {
-        ...initialGameState,
+        ...state,
         grid: Array(6)
           .fill(null)
           .map(() => Array(7).fill(null)),
+        winner: undefined,
+        isGameActive: true,
+        scores: { player1: 0, player2: 0 },
+        timer: 30,
+        currentPlayer:
+          state.currentPlayer === "player1" ? "player2" : "player1",
       };
 
     case "CONTINUE_GAME":
