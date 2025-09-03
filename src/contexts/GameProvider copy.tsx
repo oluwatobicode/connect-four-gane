@@ -7,6 +7,7 @@ interface GameState {
   winner: undefined | "player1" | "player2" | "draw";
   isGameActive: true | false;
   gameMode: "pvp" | "pvc" | undefined;
+  level: "easy" | "medium" | "hard" | undefined;
   timer: number;
   showMenu: true | false;
   scores: { player1: number; player2: number };
@@ -21,6 +22,7 @@ interface GameActionProps {
   startGame: (options: {
     mode: "pvp" | "pvc";
     playerTwo: "cpu" | "human";
+    level: "easy" | "medium" | "hard";
   }) => void;
   restartGame: () => void;
   pauseGame: () => void;
@@ -50,6 +52,7 @@ const initialGameState: GameState = {
   droppingColumn: undefined,
   player1: "human",
   player2: undefined,
+  level: undefined,
 };
 
 type Player = "player1" | "player2";
@@ -64,7 +67,11 @@ interface MinimaxResult {
 type gameActions =
   | {
       type: "GAME_START";
-      payload: { mode: "pvc" | "pvp"; playerTwo: "cpu" | "human" };
+      payload: {
+        mode: "pvc" | "pvp";
+        playerTwo: "cpu" | "human";
+        level: "easy" | "medium" | "hard";
+      };
     }
   | { type: "DROP_DISC"; payload: { columnId: number } }
   | { type: "ANIMATION_COMPLETE" }

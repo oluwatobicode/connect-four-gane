@@ -7,6 +7,7 @@ import Rules from "./pages/Rules";
 import Start from "./pages/Start";
 import Game from "./pages/Game";
 import GameProvider from "./contexts/GameProvider";
+import Levels from "./pages/Levels";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/" element={<Start />} />
           <Route path="/rules" element={<Rules />} />
           <Route path="/game" element={<Game />} />
+          <Route path="/levels" element={<Levels />} />
         </Routes>
       </BrowserRouter>
     </GameProvider>
