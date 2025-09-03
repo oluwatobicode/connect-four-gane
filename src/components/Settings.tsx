@@ -15,7 +15,7 @@ const Settings = () => {
 
   const handlePlayCPU = () => {
     navigate("/game");
-    startGame({ mode: "pvp", playerTwo: "human" });
+    startGame({ mode: "pvp", playerTwo: "human", level: undefined });
     console.log(`The state for playing with a cpu: ${state}`);
   };
 
