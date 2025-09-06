@@ -22,8 +22,8 @@ interface GameActionProps {
   startGame: (options: {
     mode: "pvp" | "pvc";
     playerTwo: "cpu" | "human";
-    level: "easy" | "medium" | "hard";
   }) => void;
+  setGameLevel: (option: { level: "easy" | "medium" | "hard" }) => void;
   restartGame: () => void;
   pauseGame: () => void;
   timerTick: () => void;
@@ -61,6 +61,11 @@ type gameActions =
       payload: {
         mode: "pvc" | "pvp";
         playerTwo: "cpu" | "human";
+      };
+    }
+  | {
+      type: "SET_GAME_LEVEL";
+      payload: {
         level: "easy" | "medium" | "hard";
       };
     }
@@ -105,7 +110,6 @@ const checkWinCondition = (
 ): boolean => {
   // 1)check horizontal
   let count = 1; // count the current disc
-  // count to the left
   for (let c = col - 1; c >= 0; c--) {
     if (grid[row][c] === player) {
       count++;
@@ -113,7 +117,7 @@ const checkWinCondition = (
       break;
     }
   }
-  // counts to the right
+
   for (let c = col + 1; c < 7; c++) {
     if (grid[row][c] === player) {
       count++;
@@ -126,7 +130,6 @@ const checkWinCondition = (
     return true;
   }
 
-  // 2)check vertical
   count = 1;
   for (let r = row + 1; r < 6; r++) {
     if (grid[r][col] === player) {
@@ -139,7 +142,6 @@ const checkWinCondition = (
     return true;
   }
 
-  // 3)check diagonal (bottom-left to top-right)
   count = 1;
   for (let r = row + 1, c = col - 1; r < 6 && c >= 0; r++, c--) {
     if (grid[r][c] === player) {
@@ -456,11 +458,10 @@ const minimax = (
 //  CPU move function using minimax
 const getCpuMoveWithMinimax = (grid: Grid, difficulty: number = 4): number => {
   const result = minimax(grid, difficulty, -Infinity, Infinity, true);
-  return result.column ?? 3; // Fallback to center column if null
+  return result.column ?? 3;
 };
 
 const getCpuMoveEnhanced = (grid: Grid): number => {
-  // First, try to win immediately
   for (let col = 0; col < 7; col++) {
     if (!checkIsColumnFull(grid, col)) {
       const targetRow = checkLowestRow(grid, col);
@@ -499,6 +500,12 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
         gameMode: action.payload.mode,
         player1: "human",
         player2: action.payload.playerTwo,
+      };
+
+    case "SET_GAME_LEVEL":
+      return {
+        ...state,
+        level: action.payload.level,
       };
 
     case "DROP_DISC":
@@ -700,6 +707,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
       dispatch({
         type: "GAME_START",
         payload: options,
+      });
+    },
+
+    setGameLevel: (option) => {
+      dispatch({
+        type: "SET_GAME_LEVEL",
+        payload: option,
       });
     },
 
