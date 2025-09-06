@@ -27,6 +27,13 @@ const LevelList = () => {
       hoverBorder: "hover:border-black",
       hoverShadow: "hover:shadow-[0px_6px_0px_#000000]",
     },
+    professional: {
+      label: "Professional",
+      bgColor: "bg-[#FFFFFF]",
+      textColor: "text-black",
+      hoverBorder: "hover:border-black",
+      hoverShadow: "hover:shadow-[0px_6px_0px_#000000]",
+    },
   };
 
   const navigateGame = (selectedLevel: keyof typeof levelConfig) => {
@@ -80,7 +87,7 @@ const LevelList = () => {
         )}
       </div>
 
-      <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2">
+      <div className="absolute md:-bottom-10 -bottom-25 left-1/2 transform -translate-x-1/2">
         <button
           onClick={handleGoBack}
           className="w-[64px] h-[64px] cursor-pointer"
