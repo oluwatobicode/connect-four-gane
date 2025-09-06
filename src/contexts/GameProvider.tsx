@@ -7,7 +7,7 @@ interface GameState {
   winner: undefined | "player1" | "player2" | "draw";
   isGameActive: true | false;
   gameMode: "pvp" | "pvc" | undefined;
-  level: "easy" | "medium" | "hard" | undefined;
+  level: "easy" | "medium" | "hard" | "professional" | undefined;
   timer: number;
   showMenu: true | false;
   scores: { player1: number; player2: number };
@@ -22,7 +22,9 @@ interface GameActionProps {
   startGame: (options: {
     mode: "pvp" | "pvc";
     playerTwo: "cpu" | "human";
-    level: "easy" | "medium" | "hard";
+  }) => void;
+  setGameLevel: (option: {
+    level: "easy" | "medium" | "hard" | "professional";
   }) => void;
   restartGame: () => void;
   pauseGame: () => void;
@@ -61,7 +63,12 @@ type gameActions =
       payload: {
         mode: "pvc" | "pvp";
         playerTwo: "cpu" | "human";
-        level: "easy" | "medium" | "hard";
+      };
+    }
+  | {
+      type: "SET_GAME_LEVEL";
+      payload: {
+        level: "easy" | "medium" | "hard" | "professional";
       };
     }
   | { type: "DROP_DISC"; payload: { columnId: number } }
@@ -105,7 +112,6 @@ const checkWinCondition = (
 ): boolean => {
   // 1)check horizontal
   let count = 1; // count the current disc
-  // count to the left
   for (let c = col - 1; c >= 0; c--) {
     if (grid[row][c] === player) {
       count++;
@@ -113,7 +119,7 @@ const checkWinCondition = (
       break;
     }
   }
-  // counts to the right
+
   for (let c = col + 1; c < 7; c++) {
     if (grid[row][c] === player) {
       count++;
@@ -126,7 +132,6 @@ const checkWinCondition = (
     return true;
   }
 
-  // 2)check vertical
   count = 1;
   for (let r = row + 1; r < 6; r++) {
     if (grid[r][col] === player) {
@@ -139,7 +144,6 @@ const checkWinCondition = (
     return true;
   }
 
-  // 3)check diagonal (bottom-left to top-right)
   count = 1;
   for (let r = row + 1, c = col - 1; r < 6 && c >= 0; r++, c--) {
     if (grid[r][c] === player) {
@@ -201,52 +205,6 @@ const checkIsColumnFull = (
 ): boolean => {
   return grid[0][column] !== null;
 };
-
-// const getCpuMove = (grid: (null | "player1" | "player2")[][]) => {
-//   // 1) CHECKING FOR OBVIOUS WINS
-//   for (let col = 0; col < 7; col++) {
-//     if (!checkIsColumnFull(grid, col)) {
-//       const targetRow = checkLowestRow(grid, col);
-//       const testGrid = grid.map((row) => [...row]);
-//       testGrid[targetRow][col] = "player2";
-
-//       if (checkWinCondition(testGrid, targetRow, col, "player2")) {
-//         return col;
-//       }
-//     }
-//   }
-
-//   // 2) BLOCKING THE PLAYER 1
-//   for (let col = 0; col < 7; col++) {
-//     if (!checkIsColumnFull(grid, col)) {
-//       const targetRow = checkLowestRow(grid, col);
-//       const testGrid = grid.map((row) => [...row]);
-//       testGrid[targetRow][col] = "player1";
-
-//       if (checkWinCondition(testGrid, targetRow, col, "player1")) {
-//         return col;
-//       }
-//     }
-//   }
-
-//   // 3)take center wins
-//   const centerCol = [3, 2, 4, 1, 5, 0, 6];
-
-//   for (let col of centerCol) {
-//     if (!checkIsColumnFull(grid, col)) {
-//       return col;
-//     }
-//   }
-
-//   // 4) ALLOWING THE CPU TO TAKE RANDOM COLUMNS (THE PLAYER WINS EASILY IN THIS MODE!)
-//   let randomColumn;
-
-//   do {
-//     randomColumn = Math.floor(Math.random() * 7);
-//   } while (checkIsColumnFull(grid, randomColumn));
-
-//   return randomColumn;
-// };
 
 // minmax algorithm
 
@@ -456,11 +414,31 @@ const minimax = (
 //  CPU move function using minimax
 const getCpuMoveWithMinimax = (grid: Grid, difficulty: number = 4): number => {
   const result = minimax(grid, difficulty, -Infinity, Infinity, true);
-  return result.column ?? 3; // Fallback to center column if null
+  return result.column ?? 3;
 };
 
-const getCpuMoveEnhanced = (grid: Grid): number => {
-  // First, try to win immediately
+const getDifficulty = (
+  level: "easy" | "medium" | "hard" | "professional"
+): number => {
+  switch (level) {
+    case "easy":
+      return 1;
+    case "medium":
+      return 3;
+    case "hard":
+      return 6;
+    case "professional":
+      return 7;
+
+    default:
+      return 3;
+  }
+};
+
+const getCpuMoveEnhanced = (
+  grid: Grid,
+  level: "easy" | "medium" | "hard" | "professional"
+): number => {
   for (let col = 0; col < 7; col++) {
     if (!checkIsColumnFull(grid, col)) {
       const targetRow = checkLowestRow(grid, col);
@@ -488,7 +466,7 @@ const getCpuMoveEnhanced = (grid: Grid): number => {
 
   // Use minimax for strategic play
   // the number makes it difficult to win
-  return getCpuMoveWithMinimax(grid, 4);
+  return getCpuMoveWithMinimax(grid, getDifficulty(level));
 };
 
 const gameReducer = (state: GameState, action: gameActions): GameState => {
@@ -499,6 +477,12 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
         gameMode: action.payload.mode,
         player1: "human",
         player2: action.payload.playerTwo,
+      };
+
+    case "SET_GAME_LEVEL":
+      return {
+        ...state,
+        level: action.payload.level,
       };
 
     case "DROP_DISC":
@@ -560,7 +544,7 @@ const gameReducer = (state: GameState, action: gameActions): GameState => {
       };
 
     case "CPU_DROP_DISC":
-      const cpuColumn = getCpuMoveEnhanced(state.grid);
+      const cpuColumn = getCpuMoveEnhanced(state.grid, state.level!);
 
       const cpuTargetRow = checkLowestRow(state.grid, cpuColumn);
 
@@ -700,6 +684,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
       dispatch({
         type: "GAME_START",
         payload: options,
+      });
+    },
+
+    setGameLevel: (option) => {
+      dispatch({
+        type: "SET_GAME_LEVEL",
+        payload: option,
       });
     },
 
