@@ -141,7 +141,7 @@ const GameGrid = () => {
                       </>
                     )}
                   </button>
-                ))
+                )),
               )}
             </div>
           </div>
@@ -195,8 +195,8 @@ const GameGrid = () => {
                     {state.winner === "player1"
                       ? "PLAYER 1"
                       : state.winner === "player2" && state.player2 === "cpu"
-                      ? "CPU"
-                      : "PLAYER 2"}
+                        ? "CPU"
+                        : "PLAYER 2"}
                   </h2>
                   <h2 className="font-bold text-[56px] text-black">WINS!</h2>
                   <button
