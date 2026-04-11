@@ -1,13 +1,7 @@
 import axios from "axios";
-import {
-  createContext,
-  useRef,
-  useState,
-  type ReactNode,
-  useEffect,
-} from "react";
+import { createContext, useState, type ReactNode } from "react";
 import toast from "react-hot-toast";
-import { apiInstance } from "../api/api";
+import { apiInstance, STORAGE_KEYS } from "../api/api";
 import type { LoginData, LogInResult } from "../interface/LogIn";
 import type {
   LoginWithGoogleData,
@@ -23,7 +17,6 @@ import type { AuthUser } from "../interface/User";
 type AuthContextValue = {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  isInitializing: boolean;
   pendingVerificationEmail: string;
   setPendingVerificationEmail: (email: string) => void;
   signup: (data: SignUpData) => Promise<SignUpResult>;
@@ -38,19 +31,12 @@ type AuthContextValue = {
 // Storage helpers
 // ---------------------------------------------------------------------------
 
-const KEYS = {
-  user: "user",
-  accessToken: "accessToken",
-  refreshToken: "refreshToken",
-  pendingEmail: "pendingVerificationEmail",
-} as const;
-
 const readStoredUser = (): AuthUser | null => {
   try {
-    const raw = localStorage.getItem(KEYS.user);
+    const raw = localStorage.getItem(STORAGE_KEYS.user);
     return raw ? (JSON.parse(raw) as AuthUser) : null;
   } catch {
-    localStorage.removeItem(KEYS.user);
+    localStorage.removeItem(STORAGE_KEYS.user);
     return null;
   }
 };
@@ -84,45 +70,10 @@ export const AuthContext = createContext<AuthContextValue | undefined>(
 // ---------------------------------------------------------------------------
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
+  // Lazy initializers — run once on mount, no useEffect needed
+  const [user, setUser] = useState<AuthUser | null>(readStoredUser);
   const [pendingVerificationEmail, setPendingVerificationEmailState] =
-    useState("");
-
-  // Keep the access token in a ref so the axios interceptor always reads the
-  // latest value without needing to be re-registered on every token change.
-  const accessTokenRef = useRef<string | null>(null);
-
-  // -------------------------------------------------------------------------
-  // Initialise from localStorage
-  // -------------------------------------------------------------------------
-
-  useEffect(() => {
-    accessTokenRef.current = localStorage.getItem(KEYS.accessToken);
-    setUser(readStoredUser());
-    setPendingVerificationEmailState(
-      localStorage.getItem(KEYS.pendingEmail) ?? "",
-    );
-    setIsInitializing(false);
-  }, []);
-
-  // -------------------------------------------------------------------------
-  // Axios request interceptor — attach token on every request
-  // -------------------------------------------------------------------------
-
-  useEffect(() => {
-    const id = apiInstance.interceptors.request.use((config) => {
-      const token = accessTokenRef.current;
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      } else {
-        delete config.headers.Authorization;
-      }
-      return config;
-    });
-
-    return () => apiInstance.interceptors.request.eject(id);
-  }, []); // registered once — ref always has latest token
+    useState(() => localStorage.getItem(STORAGE_KEYS.pendingEmail) ?? "");
 
   // -------------------------------------------------------------------------
   // Session helpers
@@ -133,29 +84,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     accessToken: string;
     refreshToken: string;
   }) => {
-    accessTokenRef.current = data.accessToken;
     setUser(data.user);
-    localStorage.setItem(KEYS.user, JSON.stringify(data.user));
-    localStorage.setItem(KEYS.accessToken, data.accessToken);
-    localStorage.setItem(KEYS.refreshToken, data.refreshToken);
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(data.user));
+    localStorage.setItem(STORAGE_KEYS.accessToken, data.accessToken);
+    localStorage.setItem(STORAGE_KEYS.refreshToken, data.refreshToken);
     setPendingVerificationEmailState("");
-    localStorage.removeItem(KEYS.pendingEmail);
+    localStorage.removeItem(STORAGE_KEYS.pendingEmail);
   };
 
   const clearSession = () => {
-    accessTokenRef.current = null;
     setUser(null);
-    localStorage.removeItem(KEYS.user);
-    localStorage.removeItem(KEYS.accessToken);
-    localStorage.removeItem(KEYS.refreshToken);
+    localStorage.removeItem(STORAGE_KEYS.user);
+    localStorage.removeItem(STORAGE_KEYS.accessToken);
+    localStorage.removeItem(STORAGE_KEYS.refreshToken);
   };
 
   const setPendingVerificationEmail = (email: string) => {
     setPendingVerificationEmailState(email);
     if (email) {
-      localStorage.setItem(KEYS.pendingEmail, email);
+      localStorage.setItem(STORAGE_KEYS.pendingEmail, email);
     } else {
-      localStorage.removeItem(KEYS.pendingEmail);
+      localStorage.removeItem(STORAGE_KEYS.pendingEmail);
     }
   };
 
@@ -221,7 +170,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
-    const refreshToken = localStorage.getItem(KEYS.refreshToken) ?? "";
+    const refreshToken =
+      localStorage.getItem(STORAGE_KEYS.refreshToken) ?? "";
     try {
       if (refreshToken) {
         await apiInstance.post("/auth/logout", { refreshToken });
@@ -242,8 +192,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: Boolean(user && accessTokenRef.current),
-        isInitializing,
+        isAuthenticated: Boolean(
+          user && localStorage.getItem(STORAGE_KEYS.accessToken),
+        ),
         pendingVerificationEmail,
         setPendingVerificationEmail,
         signup,

@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router";
 import { useProfile } from "../hooks/useProfile";
 import ProfileCard from "../components/profile/ProfileCard";
-import AchievementsList from "../components/profile/AchievementsList";
+import AchievementsList from "../components/achievements/AchievementsList";
 import ButtonSpinner from "../components/auth/ButtonSpinner";
 import { HiArrowLeft } from "react-icons/hi";
 

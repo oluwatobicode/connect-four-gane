@@ -7,7 +7,6 @@ import Rules from "./pages/Rules";
 import Start from "./pages/Start";
 import Game from "./pages/Game";
 import GameProvider from "./contexts/GameProvider";
-import Levels from "./pages/Levels";
 import Onboarding from "./pages/Onboarding";
 import { SignUp } from "./pages/SignUp";
 import { Login } from "./pages/Login";
@@ -16,6 +15,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import NewPassword from "./pages/NewPassword";
 import Profile from "./pages/Profile";
 import LeaderboardPage from "./pages/LeaderboardPage";
+import Lobby from "./pages/Lobby";
 import { AuthProvider } from "./contexts/AuthProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -49,9 +49,9 @@ function App() {
               <Route path="/start" element={<Start />} />
               <Route path="/rules" element={<Rules />} />
               <Route path="/game" element={<Game />} />
-              <Route path="/levels" element={<Levels />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/leaderboard" element={<LeaderboardPage />} />
+              <Route path="/lobby" element={<Lobby />} />
             </Route>
           </Routes>
         </BrowserRouter>
