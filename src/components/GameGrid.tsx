@@ -1,76 +1,50 @@
-import { useEffect } from "react";
 import { useGameContext } from "../contexts/GameProvider";
 
 const GameGrid = () => {
-  const { state, dropDisc, playAgain, timerTick, cpuDropDisc } =
-    useGameContext();
+  const { state, dropDisc, playAgain } = useGameContext();
 
   const handleColumnClick = (colIndex: number) => {
-    if (state.isGameActive) {
+    if (state.isGameActive && state.isMyTurn && !state.isLoading) {
       dropDisc(colIndex);
     }
   };
 
-  const handlePlayAgain = () => {
-    playAgain();
-  };
-
   const getTurnText = () => {
-    if (state.currentPlayer === "player1") {
-      return "PLAYER 1'S TURN";
-    } else {
-      if (state.player2 === "cpu") {
-        return "CPU'S TURN";
-      } else {
-        return "PLAYER 2'S TURN";
-      }
-    }
+    if (!state.isGameActive) return "";
+    if (state.isMyTurn) return "YOUR TURN";
+    if (state.gameMode === "PVC") return "CPU'S TURN";
+    return "OPPONENT'S TURN";
   };
 
-  useEffect(() => {
-    let interval = undefined;
-    if (!state.isGameActive) return;
-
-    if (state.isGameActive) {
-      interval = setInterval(() => {
-        timerTick();
-      }, 1000);
-    } else if (state.isGameActive === false) {
-      clearInterval(interval);
+  const getWinnerText = () => {
+    switch (state.winner) {
+      case "player1":
+        return "PLAYER 1";
+      case "cpu":
+        return "CPU";
+      case "player2":
+        return "PLAYER 2";
+      default:
+        return "";
     }
-
-    return () => clearInterval(interval);
-  }, [state.isGameActive, state.currentPlayer]);
-
-  useEffect(() => {
-    if (
-      state.currentPlayer === "player2" &&
-      state.player2 === "cpu" &&
-      state.isGameActive
-    ) {
-      const timer = setTimeout(() => {
-        cpuDropDisc();
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [state.currentPlayer, state.isGameActive]);
+  };
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center">
       <div className="grid grid-rows-1 gap-[50px] md:gap-0 grid-cols-2 md:grid-cols-4 md:grid-rows-1 items-center justify-center">
+        {/* Player 1 score card */}
         <div className="flex items-center justify-center md:col-start-1 row-start-1 md:row-start-1">
           <div className="flex  relative flex-col items-center justify-center md:w-[141px] md:h-[187px] w-[142px] h-[81px] bg-white border-4 border-[#000] rounded-[20px] shadow-[0px_8px_0px_#000000]">
             <div className="absolute md:transform md:-translate-y-1/2 md:-top-2 -left-6 md:left-10">
-              {state.player2 === "human" ? (
-                <img src="/images/player-one.svg" alt="player 1 icon" />
+              {state.gameMode === "PVC" ? (
+                <img src="/images/you.svg" alt="player 1 icon" />
               ) : (
-                <img src="/images/you.svg" alt="player 2 icon" />
+                <img src="/images/player-one.svg" alt="player 1 icon" />
               )}
             </div>
 
             <h1 className="text-black mt-3 text-[16px] md:text-[20px] font-bold">
-              Player 1
+              {state.gameMode === "PVC" ? "YOU" : "Player 1"}
             </h1>
             <span className="text-black text-[32px] font-bold md:text-[56px]">
               {state.scores.player1}
@@ -78,6 +52,7 @@ const GameGrid = () => {
           </div>
         </div>
 
+        {/* Game Board */}
         <div className="relative flex items-center justify-center col-span-2 md:col-start-2 row-start-2 md:row-start-1">
           <div className="relative">
             <img
@@ -107,8 +82,13 @@ const GameGrid = () => {
                 row.map((cell, colIndex) => (
                   <button
                     key={`${rowIndex}-${colIndex}`}
-                    className="relative z-30 cursor-pointer rounded-full w-[33.92px] h-[33.92px] md:w-[75px] md:h-[75px] flex items-center justify-center hover:scale-105 transition-transform"
+                    className={`relative z-30 rounded-full w-[33.92px] h-[33.92px] md:w-[75px] md:h-[75px] flex items-center justify-center hover:scale-105 transition-transform ${
+                      state.isMyTurn && state.isGameActive
+                        ? "cursor-pointer"
+                        : "cursor-not-allowed opacity-90"
+                    }`}
                     onClick={() => handleColumnClick(colIndex)}
+                    disabled={!state.isMyTurn || !state.isGameActive}
                   >
                     {cell === "player1" && (
                       <>
@@ -141,25 +121,25 @@ const GameGrid = () => {
                       </>
                     )}
                   </button>
-                ))
+                )),
               )}
             </div>
           </div>
 
+          {/* Turn indicator / Winner display */}
           <div className="absolute bottom-5 md:bottom-15 left-1/2 transform -translate-x-1/2 translate-y-full z-30  flex items-center justify-center">
             {state.isGameActive && (
               <div className="relative">
-                {state.currentPlayer === "player1" && (
+                {state.isMyTurn ? (
                   <img
                     src="/images/turn-background-red.svg"
-                    alt="Player 1 turn indicator"
+                    alt="Your turn indicator"
                     className="w-auto h-auto"
                   />
-                )}
-                {state.currentPlayer === "player2" && (
+                ) : (
                   <img
                     src="/images/turn-background-yellow.svg"
-                    alt="Player 2 turn indicator"
+                    alt="Opponent turn indicator"
                     className="w-auto h-auto"
                   />
                 )}
@@ -168,43 +148,40 @@ const GameGrid = () => {
                   <div className="pt-10 text-center">
                     <h2
                       className={`font-bold text-[16px] ${
-                        state.currentPlayer === "player1"
-                          ? "text-[#FFF]"
-                          : "text-[#000]"
+                        state.isMyTurn ? "text-[#FFF]" : "text-[#000]"
                       }`}
                     >
                       {getTurnText()}
                     </h2>
-                    <h2
-                      className={`font-bold text-[56px] ${
-                        state.currentPlayer === "player1"
-                          ? "text-[#FFF]"
-                          : "text-[#000]"
-                      }`}
-                    >
-                      {state.timer}s
-                    </h2>
+                    {state.isLoading && (
+                      <p
+                        className={`text-sm mt-1 ${
+                          state.isMyTurn ? "text-white/70" : "text-black/50"
+                        }`}
+                      >
+                        {state.isMyTurn ? "Sending..." : "Thinking..."}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
             )}
+
             {state.winner && state.winner !== "draw" && (
               <div className="relative w-[285px] h-[160px] rounded-[20px] bg-[#fff] border-2 border-[#000] shadow-[0px_10px_0px_#000000] flex items-center justify-center">
                 <div className="absolute flex flex-col items-center justify-center ">
                   <h2 className="font-bold text-[16px] text-black">
-                    {state.winner === "player1"
-                      ? "PLAYER 1"
-                      : state.winner === "player2" && state.player2 === "cpu"
-                      ? "CPU"
-                      : "PLAYER 2"}
+                    {getWinnerText()}
                   </h2>
                   <h2 className="font-bold text-[56px] text-black">WINS!</h2>
-                  <button
-                    onClick={handlePlayAgain}
-                    className="cursor-pointer w-[130px] h-[39px] text-white bg-[#5C2DD5] font-bold rounded-[20px] text-[16px]"
-                  >
-                    PLAY AGAIN
-                  </button>
+                  {state.gameMode !== "PVP" && (
+                    <button
+                      onClick={playAgain}
+                      className="cursor-pointer w-[130px] h-[39px] text-white bg-[#5C2DD5] font-bold rounded-[20px] text-[16px] hover:scale-105 active:scale-95 transition-all"
+                    >
+                      PLAY AGAIN
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -213,29 +190,32 @@ const GameGrid = () => {
               <div className="relative w-[285px] h-[160px] rounded-[20px] bg-[#fff] border-2 border-[#000] shadow-[0px_10px_0px_#000000] flex items-center justify-center">
                 <div className="absolute flex flex-col items-center justify-center ">
                   <h2 className="font-bold text-[56px] text-black">DRAW!</h2>
-                  <button
-                    onClick={handlePlayAgain}
-                    className="cursor-pointer w-[130px] h-[39px] text-white bg-[#5C2DD5] font-bold rounded-[20px] text-[16px]"
-                  >
-                    PLAY AGAIN
-                  </button>
+                  {state.gameMode !== "PVP" && (
+                    <button
+                      onClick={playAgain}
+                      className="cursor-pointer w-[130px] h-[39px] text-white bg-[#5C2DD5] font-bold rounded-[20px] text-[16px] hover:scale-105 active:scale-95 transition-all"
+                    >
+                      PLAY AGAIN
+                    </button>
+                  )}
                 </div>
               </div>
             )}
           </div>
         </div>
 
+        {/* Player 2 / CPU score card */}
         <div className="flex items-center justify-center row-start-1 md:row-start-1">
           <div className="flex relative  flex-col items-center justify-center border-4 border-[#000] font-medium md:w-[141px] md:h-[187px] w-[142px] h-[81px] bg-white rounded-[20px] shadow-[0px_8px_0px_#000000]">
             <div className="absolute md:transform md:-translate-y-1/2 md:-top-2 -right-6 md:right-10">
-              {state.player2 === "human" ? (
-                <img src="/images/player-two.svg" alt="player 2 icon" />
+              {state.gameMode === "PVC" ? (
+                <img src="/images/cpu.svg" alt="CPU icon" />
               ) : (
-                <img src="/images/cpu.svg" alt="player 2 icon" />
+                <img src="/images/player-two.svg" alt="player 2 icon" />
               )}
             </div>
             <h1 className="text-black mt-3 text-[16px] md:text-[20px] font-bold">
-              {state.player2 === "human" ? "Player 2 " : "CPU"}
+              {state.gameMode === "PVC" ? "CPU" : "Player 2"}
             </h1>
             <span className="text-black text-[32px] font-bold md:text-[56px]">
               {state.scores.player2}
@@ -247,7 +227,7 @@ const GameGrid = () => {
       <div
         className={`w-full h-[250px] relative bg-[#5C2DD5] rounded-tl-[60px] rounded-tr-[60px]  ${
           state.winner === "player1" ? "bg-[#FD6687]" : " "
-        } ${state.winner === "player2" ? "bg-[#FFCE67]" : " "}`}
+        } ${state.winner === "player2" || state.winner === "cpu" ? "bg-[#FFCE67]" : " "}`}
       ></div>
     </main>
   );

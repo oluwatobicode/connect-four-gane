@@ -4,7 +4,7 @@ const RulesList = () => {
   const navigate = useNavigate();
 
   const handleGoBack = () => {
-    navigate("/");
+    navigate("/start");
   };
 
   return (

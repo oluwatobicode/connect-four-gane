@@ -2,15 +2,10 @@ import Modal from "../ui/Modal";
 import { useGameContext } from "../contexts/GameProvider";
 
 const Navbar = () => {
-  const { showMenu, state, restartGame, pauseGame } = useGameContext();
+  const { toggleMenu, state } = useGameContext();
 
   const onClick = () => {
-    pauseGame();
-    showMenu({ show: true });
-  };
-
-  const handleRestartGame = () => {
-    restartGame();
+    toggleMenu();
   };
 
   return (
@@ -35,12 +30,7 @@ const Navbar = () => {
         {state.showMenu && <Modal />}
 
         <div className="ml-auto">
-          <button
-            onClick={handleRestartGame}
-            className="cursor-pointer w-[89px] h-[39px] bg-[#5C2DD5] rounded-[20px] text-[16px]"
-          >
-            Restart
-          </button>
+          {/* Restart not applicable for online — leave placeholder */}
         </div>
       </div>
     </nav>
