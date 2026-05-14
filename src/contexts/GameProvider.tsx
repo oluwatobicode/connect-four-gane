@@ -110,7 +110,12 @@ const resolveWinner = (
   server: ServerGameState,
   myUserId: string,
 ): "player1" | "player2" | "cpu" | "draw" | null => {
-  if (server.status !== "COMPLETED" && server.status !== "DRAW" && server.status !== "FORFEITED" && server.status !== "ABANDONED") {
+  if (
+    server.status !== "COMPLETED" &&
+    server.status !== "DRAW" &&
+    server.status !== "FORFEITED" &&
+    server.status !== "ABANDONED"
+  ) {
     return null;
   }
 
@@ -285,7 +290,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
           winner: iLost ? "player2" : "player1",
         };
       });
-      toast(iLost ? "You were disconnected too long 😬" : "Opponent abandoned! 🎉");
+      toast(
+        iLost ? "You were disconnected too long 😬" : "Opponent abandoned! 🎉",
+      );
     };
 
     // -- player_joined: someone joined the game room --
@@ -409,7 +416,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       } catch (err: unknown) {
         const msg = axios.isAxiosError(err)
-          ? err.response?.data?.message ?? "Failed to create game"
+          ? (err.response?.data?.message ?? "Failed to create game")
           : "Failed to create game";
         toast.error(msg);
         setState((prev) => ({ ...prev, isLoading: false }));
@@ -444,7 +451,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       } catch (err: unknown) {
         const msg = axios.isAxiosError(err)
-          ? err.response?.data?.message ?? "Failed to join game"
+          ? (err.response?.data?.message ?? "Failed to join game")
           : "Failed to join game";
         toast.error(msg);
         setState((prev) => ({ ...prev, isLoading: false }));
@@ -488,13 +495,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       } catch (err: unknown) {
         const msg = axios.isAxiosError(err)
-          ? err.response?.data?.message ?? "Move failed"
+          ? (err.response?.data?.message ?? "Move failed")
           : "Move failed";
         toast.error(msg);
         setState((prev) => ({ ...prev, isLoading: false, isMyTurn: true }));
       }
     },
-    [state.serverState?.id, state.isGameActive, state.isMyTurn, applyServerState],
+    [
+      state.serverState?.id,
+      state.isGameActive,
+      state.isMyTurn,
+      applyServerState,
+    ],
   );
 
   /** Leave the current game */
@@ -503,22 +515,24 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (gameId) {
       try {
-        // Tell socket to leave the room
         socket.emit("leave_game", gameId);
-        await apiLeaveGame(gameId);
+
+        // Only call leave if game is still in progress
+        if (state.serverState?.status === "IN_PROGRESS") {
+          await apiLeaveGame(gameId);
+        }
       } catch (err) {
         console.error("Failed to leave game:", err);
       }
     }
 
-    // Disconnect socket when not in a game
     if (socket.connected) {
       socket.disconnect();
     }
 
     gameIdRef.current = null;
     setState(initialState);
-  }, [state.serverState?.id]);
+  }, [state.serverState?.id, state.serverState?.status]);
 
   /** Refresh game state from server (resync fallback) */
   const refreshGameState = useCallback(async () => {
